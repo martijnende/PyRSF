@@ -8,6 +8,11 @@ Dieterich, J. H. (2007), Applications of rate- and state-dependent
 friction to models of fault slip and earthquake occurrence, 
 in: Treatise on Geophysics, edited by Kanamori, H., and G. Schubert, 
 Earthquake Seismology, vol. 4, Elsevier, Amsterdam, 6054.
+
+Thomas, M. Y., N. Lapusta, H. Noda, and J.-P. Avouac (2014), 
+Quasi-dynamic versus fully dynamic simulations of earthquakes and 
+aseismic slip with and without enhanced coseismic weaken-ing, 
+J. Geophys. Res. Solid Earth, 119, 1986–2004, doi:10.1002/2013JB010615.
 """
 
 import numpy as np
@@ -39,18 +44,32 @@ class rsf_framework:
 
 	# Classical evolution effect
 	def _evolution_regular(self, theta, params):
-		return np.sum( params["b"]*np.log(params["V0"]*theta/params["Dc"]), axis=0 )
+
+		buf = 0.0
+		for i in xrange(len(theta)):
+			buf += params["b"][i]*np.log(params["V0"]*theta[i]/params["Dc"][i])
+
+		return buf
 
 	# Modified evolution effect with cut-off velocity Vc (see Dieterich, 2007)
 	def _evolution_cutoff(self, theta, params):
-		return np.sum(params["b"]*np.log(params["Vc"]*theta/params["Dc"] + 1.0) )
+
+		buf = 0.0
+		for i in xrange(len(theta)):
+			buf += params["b"][i]*np.log(params["Vc"]*theta[i]/params["Dc"][i] + 1.0)
+
+		return buf
 
 	# Calculate velocity corresponding with mu and theta
 	def calc_V(self, vars, params):
 
 		# Unpack variables
-		mu = vars[0]
-		theta = vars[1:]
+		if type(vars) is dict:
+			mu = vars["mu"]
+			theta = vars["theta"]
+		else:
+			mu = vars[0]
+			theta = vars[1:]
 
 		# Calculate the contribution from the evolution term(s)
 		evolution_buf = self.evolution_term(theta, params)
@@ -72,7 +91,7 @@ class rsf_framework:
 		dtheta = self.state_evolution(theta, V, Dc)
 
 		# Rate of change of friction, including the quasi-dynamic radiation
-		# damping approximation to limit slip velocities
+		# damping approximation to limit slip velocities (see e.g. Thomas et al., 2014)
 		# dmu/dt = (k*(V_lp - V) - eta*dV/dtheta * dtheta/dt) / (1 + eta*dV/dmu)
 		# eta = 0.5*G/(c*sigma), 
 		# with G: shear modulus, c: shear wave speed, sigma: normal stress
@@ -80,7 +99,7 @@ class rsf_framework:
 		# Default value = 0 (no radiation damping)
 		radiation_term1 = -params["eta"]*(params["b"]/params["a"])*(V/theta)*dtheta
 		radiation_term2 = params["eta"]*V/params["a"]
-		dmu = (params["k"]*(params["V1"] - V) - radiation_term1)/(1 + radiation_term2)
+		dmu = (params["k"]*(params["V1"] - V) - radiation_term1.sum())/(1 + radiation_term2)
 
 		# Pack output
 		out = np.hstack([dmu, dtheta])
@@ -95,28 +114,41 @@ class integrator_class(rsf_framework):
 		self.setup()
 		pass
 
+	# Initialise integrator
 	def setup(self):
 		self.integrator = ode(self.constitutive_relation)
 		self.integrator.set_integrator("lsoda")
 
+	# Main integrator function. Output vector:
+	# 0: friction, 1+: state parameters
 	def integrate(self, t, params):
 
+		# Initial values of theta
 		theta0 = params["Dc"]/params["V0"]
+
+		# Initial values used for integration
 		y0 = np.hstack([params["mu0"], theta0])
 
+		# Allocate results
 		result = np.zeros( (len(t), 1+len(params["b"])) )*np.nan
 		result[0] = y0
 
 		integrator = self.integrator
+		# Set initial value
 		integrator.set_initial_value(y0, t[0])
+		# Set function parameters
 		integrator.set_f_params(params)		
 
 		i = 1
+		# While integrator is alive, keep integrating up to t_max
 		while integrator.successful() and integrator.t < np.max(t):
+			# Perform one integration step
 			integrator.integrate(t[i])
+			# Store result
 			result[i] = integrator.y[:]
 			i += 1
 
+		# Transpose result first
 		return result.T
 
 
@@ -176,10 +208,19 @@ class rsf_inversion(integrator_class, rsf_framework):
 	# parameters are used that were set through set_params()
 	def forward(self, t, params=False):
 		
+		# If params dict is not given, get one from self
 		if params is False: params = self.params
+
+		# Integrate forward model
 		result = self.integrate(t, params)
+
+		# Pack output dict
+		out = {
+			"mu": result[0],
+			"theta": result[1:]
+		}
 		
-		return result
+		return out
 
 	# Error function to minimise during the inversion
 	def error(self, p):
@@ -191,7 +232,7 @@ class rsf_inversion(integrator_class, rsf_framework):
 		result = self.forward(self.data["t"], params)
 
 		# Difference between data and forward model
-		diff = self.data["mu"] - result[0]
+		diff = self.data["mu"] - result["mu"]
 		return diff
 
 	# Estimate the uncertainty in the inverted parameters, based
@@ -243,19 +284,22 @@ class rsf_inversion(integrator_class, rsf_framework):
 		# Loop over all parameters to invert for
 		for key in self.inversion_params:
 
-			# Check if any parameter matches our pattern
+			# Check if any parameter matches pattern b1, Dc_2, etc.
 			if re.match(self.regex_pattern, key) is not None:
 				# Get the quantity (b or Dc)
 				obj = re.match("b|Dc", key, flags=re.I).group()
-
 				# Get the number (1, 2, 3, etc.)
 				i = int(re.search("[0-9]+", key).group())
+				# Get value from parameter dict
 				val = self.params[obj][i-1]
 			elif re.match("b|Dc", key, flags=re.I):
+				# Case we have only one b and Dc
 				val = self.params[key][0]
 			else:
+				# Any other parameter
 				val = self.params[key]
 
+			# Append parameter value to list
 			x0.append(val)
 
 		return x0
@@ -275,40 +319,70 @@ class rsf_inversion(integrator_class, rsf_framework):
 			"eta": self.params["eta"],
 		}
 
+		# Check if Vc is given
 		if "Vc" in self.params:
 			params["Vc"] = self.params["Vc"]
 
+		# Loop over all inversion parameters
 		for i, key in enumerate(self.inversion_params):
+			# Check if any parameter matches pattern b1, Dc_2, etc.
 			if re.match(self.regex_pattern, key) is not None:
+				# Get the quantity (b or Dc)
 				obj = re.match("b|Dc", key, flags=re.I).group()
+				# Append value to list
 				params[obj].append(p[i])
 			elif re.match("b|Dc", key, flags=re.I):
+				# Case we have only one b and Dc
 				params[key] = np.array([p[i]])
 			else:
+				# Any other parameter
 				params[key] = p[i]
 
 		return params
 
+	# Perform least-squares regression
 	def inv_leastsq(self):
 
+		# Prepare a vector with our initial guess
 		x0 = self.pack_params()
+
+		# OLS function
 		popt, pcov, infodict, errmsg, success = leastsq(self.error, x0, full_output=True)
 
+		# Return best-fit parameters and Jacobian matrix
 		return popt, pcov
 
 	# Main inversion function
 	def inversion(self, data_dict, inversion_params, plot=True):
 
+		# Store some input parameters
 		self.inversion_params = inversion_params
 		self.data = data_dict
 
+		# Get best-fit parameters and Jacobian
 		popt, pcov = self.inv_leastsq()
+
+		# Calculate error of estimate
 		uncertainty = self.estimate_uncertainty(popt, pcov)
+
+		# Print results to screen
 		self.print_result(popt, uncertainty)
 
+		# Prepare output dictionary
+		out = {}
+		for i, key in enumerate(inversion_params):
+			# Each parameter result is stored as a pair of
+			# (value, uncertainty) in output dict
+			out[key] = (popt[i], uncertainty[i])
+
+		# Check if a plot is requested
 		if plot is True:
+			
+			# Construct forward model with best-fit parameters
 			params = self.unpack_params(popt)
-			mu_model = self.forward(self.data["t"], params)[0]
+			result = self.forward(self.data["t"], params)
+
+			mu_model = result["mu"]
 
 			plt.figure()
 			plt.plot(self.data["t"], self.data["mu"], label="Data")
@@ -319,4 +393,4 @@ class rsf_inversion(integrator_class, rsf_framework):
 			plt.tight_layout()
 			plt.show()
 
-		return popt, uncertainty
+		return out
