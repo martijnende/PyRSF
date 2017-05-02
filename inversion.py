@@ -11,8 +11,8 @@ Earthquake Seismology, vol. 4, Elsevier, Amsterdam, 6054.
 
 Thomas, M. Y., N. Lapusta, H. Noda, and J.-P. Avouac (2014), 
 Quasi-dynamic versus fully dynamic simulations of earthquakes and 
-aseismic slip with and without enhanced coseismic weaken-ing, 
-J. Geophys. Res. Solid Earth, 119, 1986–2004, doi:10.1002/2013JB010615.
+aseismic slip with and without enhanced coseismic weakening, 
+J. Geophys. Res. Solid Earth, 119, 1986-2004, doi:10.1002/2013JB010615.
 """
 
 import numpy as np
@@ -168,7 +168,29 @@ class rsf_inversion(integrator_class, rsf_framework):
 	def set_params(self, params):
 
 		self.params = params
-		# Do sanity check
+
+		required_params = ("a", "b", "Dc", "mu0", "V0", "V1")
+
+		# Perform sanity check
+		error = False
+		for key in required_params:
+			if key not in self.params:
+				print "Parameter '%s' missing" % (key)
+				error = True
+
+		if type(self.params["b"]) is not type(np.array([])):
+			print "Parameter 'b' should be a NumPy array (e.g. np.array([0.01, 0.02]) )"
+			error = True
+
+		if type(self.params["Dc"]) is not type(np.array([])):
+			print "Parameter 'Dc' should be a NumPy array (e.g. np.array([0.01, 0.02]) )"
+			error = True
+
+		# If we caught an error, exit program
+		if error: exit()
+
+		pass
+		
 
 	def set_state_evolution(self, law):
 
