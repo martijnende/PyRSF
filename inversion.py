@@ -9,16 +9,14 @@ friction to models of fault slip and earthquake occurrence,
 in: Treatise on Geophysics, edited by Kanamori, H., and G. Schubert, 
 Earthquake Seismology, vol. 4, Elsevier, Amsterdam, 6054.
 
-Thomas, M. Y., N. Lapusta, H. Noda, and J.-P. Avouac (2014), 
-Quasi-dynamic versus fully dynamic simulations of earthquakes and 
-aseismic slip with and without enhanced coseismic weakening, 
-J. Geophys. Res. Solid Earth, 119, 1986-2004, doi:10.1002/2013JB010615.
+Rice, J.R. (1993), Spatio-temporal Complexity of Slip on a Fault
+J. Geophys. Res., 98(B6), 9885-9907, doi:10.1029/93JB00191
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import ode
-from scipy.optimize import leastsq
+from scipy.optimize import leastsq, curve_fit
 import re
 
 """
@@ -91,7 +89,7 @@ class rsf_framework:
 		dtheta = self.state_evolution(theta, V, Dc)
 
 		# Rate of change of friction, including the quasi-dynamic radiation
-		# damping approximation to limit slip velocities (see e.g. Thomas et al., 2014)
+		# damping approximation to limit slip velocities (see e.g. Rice, 1993)
 		# dmu/dt = (k*(V_lp - V) - eta*dV/dtheta * dtheta/dt) / (1 + eta*dV/dmu)
 		# eta = 0.5*G/(c*sigma), 
 		# with G: shear modulus, c: shear wave speed, sigma: normal stress
@@ -244,6 +242,7 @@ class rsf_inversion(integrator_class, rsf_framework):
 		
 		return out
 
+
 	# Error function to minimise during the inversion
 	def error(self, p):
 
@@ -256,6 +255,12 @@ class rsf_inversion(integrator_class, rsf_framework):
 		# Difference between data and forward model
 		diff = self.data["mu"] - result["mu"]
 		return diff
+
+	def error_curvefit(self, t, p):
+
+		params = self.unpack_params(p)
+		result = self.forward(t, params)
+		return result
 
 	# Estimate the uncertainty in the inverted parameters, based
 	# on the Jacobian matrix provided by the leastsq function
@@ -332,6 +337,7 @@ class rsf_inversion(integrator_class, rsf_framework):
 
 		# Construct parameter dict
 		params = {
+			"a": self.params["a"],
 			"b": [], 
 			"Dc": [], 
 			"k": self.params["k"],
@@ -374,6 +380,18 @@ class rsf_inversion(integrator_class, rsf_framework):
 		# Return best-fit parameters and Jacobian matrix
 		return popt, pcov
 
+	# Perform non-linear least-squares
+	def inv_curvefit(self):
+
+		# Prepare a vector with our initial guess
+		x0 = self.pack_params()
+
+		# NL-LS function
+		popt, pcov = curve_fit(self.error_curvefit, self.data["t"], self.data["mu"], p0=x0)
+
+		# Return best-fit parameters and covariance matrix
+		return popt, pcov
+
 	# Main inversion function
 	def inversion(self, data_dict, inversion_params, plot=True):
 
@@ -382,7 +400,9 @@ class rsf_inversion(integrator_class, rsf_framework):
 		self.data = data_dict
 
 		# Get best-fit parameters and Jacobian
-		popt, pcov = self.inv_leastsq()
+		#popt, pcov = self.inv_leastsq()
+		# Note, pcov not correct!!!! See documentation Scipy
+		popt, pcov = self.inv_curvefit()
 
 		# Calculate error of estimate
 		uncertainty = self.estimate_uncertainty(popt, pcov)
