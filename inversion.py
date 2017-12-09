@@ -1,5 +1,5 @@
 """
-Author: Martijn van den Ende
+Author: Martijn van den Ende (ORCID:0000-0002-0634-7078)
 Modification date: 01 May 2017
 
 References:
