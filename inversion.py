@@ -13,11 +13,17 @@ Rice, J.R. (1993), Spatio-temporal Complexity of Slip on a Fault
 J. Geophys. Res., 98(B6), 9885-9907, doi:10.1029/93JB00191
 """
 
+# Importing python compatiblity functions
+from __future__ import print_function
+from builtins import range
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import ode
 from scipy.optimize import leastsq, curve_fit
 import re
+
+
 
 """
 The rate-and-state friction framework
@@ -44,7 +50,7 @@ class rsf_framework:
 	def _evolution_regular(self, theta, params):
 
 		buf = 0.0
-		for i in xrange(len(theta)):
+		for i in range(len(theta)):
 			buf += params["b"][i]*np.log(params["V0"]*theta[i]/params["Dc"][i])
 
 		return buf
@@ -53,7 +59,7 @@ class rsf_framework:
 	def _evolution_cutoff(self, theta, params):
 
 		buf = 0.0
-		for i in xrange(len(theta)):
+		for i in range(len(theta)):
 			buf += params["b"][i]*np.log(params["Vc"]*theta[i]/params["Dc"][i] + 1.0)
 
 		return buf
@@ -173,15 +179,15 @@ class rsf_inversion(integrator_class, rsf_framework):
 		error = False
 		for key in required_params:
 			if key not in self.params:
-				print "Parameter '%s' missing" % (key)
+				print("Parameter '%s' missing" % (key))
 				error = True
 
 		if type(self.params["b"]) is not type(np.array([])):
-			print "Parameter 'b' should be a NumPy array (e.g. np.array([0.01, 0.02]) )"
+			print("Parameter 'b' should be a NumPy array (e.g. np.array([0.01, 0.02]) )")
 			error = True
 
 		if type(self.params["Dc"]) is not type(np.array([])):
-			print "Parameter 'Dc' should be a NumPy array (e.g. np.array([0.01, 0.02]) )"
+			print("Parameter 'Dc' should be a NumPy array (e.g. np.array([0.01, 0.02]) )")
 			error = True
 
 		# If we caught an error, exit program
@@ -199,8 +205,8 @@ class rsf_inversion(integrator_class, rsf_framework):
 
 		# Check is state evolution law exists
 		if law not in law_book:
-			print "The requested state evolution law (%s) is not available" % (law)
-			print "Available laws: %s" % ( ", ".join(law_book) )
+			print("The requested state evolution law (%s) is not available" % (law))
+			print("Available laws: %s" % ( ", ".join(law_book) ))
 			exit()
 
 		# Set evolution law
@@ -215,7 +221,7 @@ class rsf_inversion(integrator_class, rsf_framework):
 
 		if a is True:
 			if not "Vc" in self.params:
-				print "The params dictionary does not contain the cutoff velocity Vc"
+				print("The params dictionary does not contain the cutoff velocity Vc")
 				exit()
 
 			self.evolution_term = self._evolution_cutoff
@@ -279,7 +285,7 @@ class rsf_inversion(integrator_class, rsf_framework):
 
 		# Compute uncertainty in each inverted parameter
 		buf = []
-		for i in xrange(N_params):
+		for i in range(N_params):
 			try:
 				buf.append(np.abs(pcov[i,i])**0.5)
 			except:
@@ -290,10 +296,10 @@ class rsf_inversion(integrator_class, rsf_framework):
 	# Print the results of the inversion on-screen
 	def print_result(self, popt, err):
 
-		print "\nResult of inversion:\n"
+		print("\nResult of inversion:\n")
 		for i, key in enumerate(self.inversion_params):
-			print "%s = %.3e +/- %.3e" % (key, popt[i], err[i])
-		print "\n(errors reported as single standard deviation) \n"
+			print("%s = %.3e +/- %.3e" % (key, popt[i], err[i]))
+		print("\n(errors reported as single standard deviation) \n")
 
 		pass
 
@@ -386,7 +392,7 @@ class rsf_inversion(integrator_class, rsf_framework):
 		# Prepare a vector with our initial guess
 		x0 = self.pack_params()
 
-		# NL-LS function
+		# NL-LS inversion
 		popt, pcov = curve_fit(self.error_curvefit, self.data["t"], self.data["mu"], p0=x0)
 
 		# Return best-fit parameters and covariance matrix

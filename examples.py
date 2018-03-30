@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -180,7 +182,7 @@ def regular_stickslips():
 
 	kc = (params["b"][0]-params["a"])/params["Dc"][0]
 
-	print "k/kc = %.3f" % (params["k"]/kc)
+	print("k/kc = %.3f" % (params["k"]/kc))
 
 	t = np.linspace(0, 500, 1e4)
 
