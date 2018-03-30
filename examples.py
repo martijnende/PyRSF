@@ -217,7 +217,7 @@ def regular_stickslips():
 
 
 
-#simple_forward_model()
-#multiple_state_parameters()
-#simple_inversion()
-regular_stickslips()
+# simple_forward_model()
+# multiple_state_parameters()
+# simple_inversion()
+# regular_stickslips()

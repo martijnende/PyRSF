@@ -262,11 +262,11 @@ class rsf_inversion(integrator_class, rsf_framework):
 		diff = self.data["mu"] - result["mu"]
 		return diff
 
-	def error_curvefit(self, t, p):
+	def error_curvefit(self, t, *p):
 
 		params = self.unpack_params(p)
 		result = self.forward(t, params)
-		return result
+		return result["mu"]
 
 	# Estimate the uncertainty in the inverted parameters, based
 	# on the Jacobian matrix provided by the leastsq function
@@ -393,7 +393,7 @@ class rsf_inversion(integrator_class, rsf_framework):
 		x0 = self.pack_params()
 
 		# NL-LS inversion
-		popt, pcov = curve_fit(self.error_curvefit, self.data["t"], self.data["mu"], p0=x0)
+		popt, pcov = curve_fit(self.error_curvefit, xdata=self.data["t"], ydata=self.data["mu"], p0=x0)
 
 		# Return best-fit parameters and covariance matrix
 		return popt, pcov
