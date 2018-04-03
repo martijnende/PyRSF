@@ -3,7 +3,7 @@ from __future__ import print_function
 import matplotlib.pyplot as plt
 import numpy as np
 
-from inversion import rsf_inversion
+from pyrsf.inversion import rsf_inversion
 
 # Initialise inversion API
 rsf = rsf_inversion()
@@ -22,202 +22,205 @@ Examples include:
 # A simple velocity-step forward model
 def simple_forward_model():
 
-	# Dictionary of input parameters
-	params = {
-		"a": 0.001,
-		"b": np.array([0.0015]),
-		"Dc": np.array([1e-4]),
-		"k": 50.0,
-		"mu0": 0.6,
-		"V0": 1e-6,
-		"V1": 1e-5,
-		"eta": 0,
-	}
+    # Dictionary of input parameters
+    params = {
+        "a": 0.001,
+        "b": np.array([0.0015]),
+        "Dc": np.array([1e-4]),
+        "k": 50.0,
+        "mu0": 0.6,
+        "V0": 1e-6,
+        "V1": 1e-5,
+        "eta": 0,
+    }
 
-	t = np.linspace(0, 100, 1e4)
+    t = np.linspace(0, 100, int(1e3))
 
-	# Set model parameters
-	rsf.set_params(params)
+    # Set model parameters
+    rsf.set_params(params)
 
-	# Select ageing law
-	rsf.set_state_evolution("ageing")
+    # Select ageing law
+    rsf.set_state_evolution("ageing")
 
-	# Perform forward model
-	result = rsf.forward(t)
+    # Perform forward model
+    result = rsf.forward(t)
+    return
 
-	# Calculate slip velocity based on model results
-	V = rsf.calc_V(result, params)
+    # Time-series of friction and velocity
+    mu = result["mu"]
+    V = result["V"]
 
-	# Time-series of friction
-	mu = result["mu"]
-	
-	# Plot results
-	plt.figure()
-	plt.subplot(211)
-	plt.plot(t, mu)
-	plt.ylabel("friction [-]")
-	plt.subplot(212)
-	plt.axhline(params["V1"], ls="--", c="k")
-	plt.plot(t, V)
-	plt.yscale("log")
-	plt.xlabel("time [s]")
-	plt.ylabel("velocity [m/s]")
-	plt.tight_layout()
-	plt.show()
+    # Plot results
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(t, mu)
+    plt.ylabel("friction [-]")
+    plt.subplot(212)
+    plt.axhline(params["V1"], ls="--", c="k")
+    plt.plot(t, V)
+    plt.yscale("log")
+    plt.xlabel("time [s]")
+    plt.ylabel("velocity [m/s]")
+    plt.tight_layout()
+    plt.show()
 
 
 def multiple_state_parameters():
 
-	# Dictionary of input parameters
-	params = {
-		"a": 0.001,
-		"b": np.array([0.001, 0.0005]),
-		"Dc": np.array([5e-5, 2e-4]),
-		"k": 50.0,
-		"mu0": 0.6,
-		"V0": 1e-6,
-		"V1": 1e-5,
-		"eta": 0,
-	}
+    # Dictionary of input parameters
+    params = {
+        "a": 0.001,
+        "b": np.array([0.001, 0.001]),
+        "Dc": np.array([5e-5, 2e-4]),
+        "k": 50.0,
+        "mu0": 0.6,
+        "V0": 1e-6,
+        "V1": 1e-5,
+        "eta": 0,
+    }
 
-	t = np.linspace(0, 100, 1e4)
+    t = np.linspace(0, 100, int(1e4))
 
-	# Set model parameters
-	rsf.set_params(params)
+    # Set model parameters
+    rsf.set_params(params)
 
-	# Select ageing law
-	rsf.set_state_evolution("ageing")
+    # Select ageing law
+    rsf.set_state_evolution("ageing")
 
-	# Perform forward model
-	result = rsf.forward(t)
+    # Perform forward model
+    result = rsf.forward(t)
 
-	# Calculate slip velocity based on model results
-	V = rsf.calc_V(result, params)
+    # Time-series of friction and velocity
+    mu = result["mu"]
+    V = result["V"]
 
-	# Time-series of friction
-	mu = result["mu"]
-	
-	# Plot results
-	plt.figure()
-	plt.subplot(211)
-	plt.plot(t, mu)
-	plt.ylabel("friction [-]")
-	plt.subplot(212)
-	plt.axhline(params["V1"], ls="--", c="k")
-	plt.plot(t, V)
-	plt.yscale("log")
-	plt.xlabel("time [s]")
-	plt.ylabel("velocity [m/s]")
-	plt.tight_layout()
-	plt.show()
+    # Plot results
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(t, mu)
+    plt.ylabel("friction [-]")
+    plt.subplot(212)
+    plt.axhline(params["V1"], ls="--", c="k")
+    plt.plot(t, V)
+    plt.yscale("log")
+    plt.xlabel("time [s]")
+    plt.ylabel("velocity [m/s]")
+    plt.tight_layout()
+    plt.show()
 
 
 def simple_inversion():
 
-	# Dictionary of input parameters
-	params = {
-		"a": 0.001,
-		"b": np.array([0.0015]),
-		"Dc": np.array([1e-4]),
-		"k": 50.0,
-		"mu0": 0.6,
-		"V0": 1e-6,
-		"V1": 1e-5,
-		"eta": 0,
-	}
+    # Dictionary of input parameters
+    params = {
+        "a": 0.001,
+        "b": np.array([0.0015]),
+        "Dc": np.array([1e-4]),
+        "k": 50.0,
+        "mu0": 0.6,
+        "V0": 3e-6,
+        "V1": 1e-5,
+        "eta": 0,
+    }
 
-	t = np.linspace(0, 100, 1e3)
+    t = np.linspace(0, 100, 1e3)
 
-	# Set model parameters
-	rsf.set_params(params)
+    # Set model parameters
+    rsf.set_params(params)
 
-	# Select ageing law
-	rsf.set_state_evolution("ageing")
+    # Select ageing law
+    rsf.set_state_evolution("ageing")
 
-	# Perform forward model
-	result = rsf.forward(t)
+    # Perform forward model
+    result = rsf.forward(t)
 
-	# Generate noisy signal
-	noise = 1e-4*(np.random.rand(len(result["mu"])) - 0.5)
-	mu_noisy = result["mu"] + noise
+    # Generate noisy signal
+    noise = 1e-4*(np.random.rand(len(result["mu"])) - 0.5)
+    mu_noisy = result["mu"] + noise
 
-	# Change initial parameters to make the inversion
-	# scheme sweat a little bit
+    # Change initial parameters to make the inversion
+    # scheme sweat a little bit
 
-	params["a"] = 0.0008
-	params["b"] = np.array([0.0011])
-	params["Dc"] = np.array([0.9e-4])
-	rsf.set_params(params)
+    params["a"] = 0.0008
+    params["b"] = np.array([0.0011])
+    params["Dc"] = np.array([0.9e-4])
+    rsf.set_params(params)
 
-	# Construct our data dictionary
-	data_dict = {"mu": mu_noisy, "t": t}
+    # Construct our data dictionary
+    data_dict = {"mu": mu_noisy, "t": t}
 
-	# The parameters to invert for. Use b1, b2, Dc1, etc. when
-	# inverting for more than one state variable
-	inversion_params = ("a", "b", "Dc")
+    # The parameters to invert for
+    inversion_params = ("a", "b", "Dc")
 
-	# Perform the inversion. The results are given as a dictionary
-	# in pairs of (value, uncertainty)
-	inv_result = rsf.inversion(data_dict, inversion_params, plot=True)
+    # Perform the inversion. The results are given as a dictionary
+    # in pairs of (value, uncertainty)
+
+    inv_result = rsf.inversion(data_dict, inversion_params, plot=False, bayes=False)
 
 def regular_stickslips():
 
-	# Define parameters for radiation damping. See e.g. Thomas et al. (2014)
-	G = 30e9
-	Vs = 3e3
-	sigma = 1e7
-	eta = 0.5*G/(Vs*sigma)
+    # Define parameters for radiation damping. See e.g. Thomas et al. (2014)
+    G = 30e9
+    Vs = 3e3
+    sigma = 1e7
+    eta = 0.5*G/(Vs*sigma)
 
-	# Dictionary of input parameters
-	params = {
-		"a": 0.001,
-		"b": np.array([0.0015,]),
-		"Dc": np.array([3e-5]),
-		"k": 10.0,
-		"mu0": 0.6,
-		"V0": 1e-6,
-		"V1": 1e-5,
-		"eta": eta,
-	}
+    # Dictionary of input parameters
+    params = {
+        "a": 0.001,
+        "b": np.array([0.0015,]),
+        "Dc": np.array([3e-5]),
+        "k": 10.0,
+        "mu0": 0.6,
+        "V0": 1e-6,
+        "V1": 1e-5,
+        "eta": 0*eta,
+    }
 
-	kc = (params["b"][0]-params["a"])/params["Dc"][0]
+    kc = (params["b"][0]-params["a"])/params["Dc"][0]
 
-	print("k/kc = %.3f" % (params["k"]/kc))
+    print("k/kc = %.3f" % (params["k"]/kc))
 
-	t = np.linspace(0, 500, 1e4)
+    t = np.linspace(0, 500, int(1e4))
 
-	# Set model parameters
-	rsf.set_params(params)
+    # Set model parameters
+    rsf.set_params(params)
 
-	# Select ageing law
-	rsf.set_state_evolution("ageing")
+    # Select ageing law
+    rsf.set_state_evolution("ageing")
 
-	# Perform forward model
-	result = rsf.forward(t)
+    # Perform forward model
+    result = rsf.forward(t)
 
-	# Calculate slip velocity based on model results
-	V = rsf.calc_V(result, params)
+    # Time-series of friction and velocity
+    mu = result["mu"]
+    V = result["V"]
 
-	# Time-series of friction
-	mu = result["mu"]
-	
-	# Plot results
-	plt.figure()
-	plt.subplot(211)
-	plt.plot(t, mu)
-	plt.ylabel("friction [-]")
-	plt.subplot(212)
-	plt.axhline(params["V1"], ls="--", c="k")
-	plt.plot(t, V)
-	plt.yscale("log")
-	plt.xlabel("time [s]")
-	plt.ylabel("velocity [m/s]")
-	plt.tight_layout()
-	plt.show()
+    # Plot results
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(t, mu)
+    plt.ylabel("friction [-]")
+    plt.subplot(212)
+    plt.axhline(params["V1"], ls="--", c="k")
+    plt.plot(t, V)
+    plt.yscale("log")
+    plt.xlabel("time [s]")
+    plt.ylabel("velocity [m/s]")
+    plt.tight_layout()
+    plt.show()
 
 
+if __name__ == "__main__":
+    # simple_forward_model()
+    # multiple_state_parameters()
+    # simple_inversion()
+    # regular_stickslips()
 
-# simple_forward_model()
-# multiple_state_parameters()
-# simple_inversion()
-# regular_stickslips()
+    import cProfile
+    import pstats
+
+    pr = cProfile.Profile()
+    pr.run("simple_inversion()")
+    ps = pstats.Stats(pr).sort_stats("tottime")
+    ps.print_stats()
