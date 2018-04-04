@@ -110,6 +110,8 @@ class rsf_framework:
         V = vars[0]
         theta = vars[1:]
 
+        inv_Dc = self.params["inv_Dc"]
+
         dtheta = self._state_evolution(theta, V)
         dmu = self._dmu_dt(V)
         dmu_dV = self._dmu_dV(V)
@@ -123,7 +125,7 @@ class rsf_framework:
         # with G: shear modulus, c: shear wave speed, sigma: normal stress
         # Higher values of eta result in lower slip velocities (more damping)
         # Default value = 0 (no radiation damping)
-        dV = (dmu + (dmu_dtheta*dtheta).sum()) / (dmu_dV + self.params["eta"])
+        dV = (dmu - (dmu_dtheta*dtheta).sum()) / (dmu_dV + self.params["eta"])
 
         # Pack output
         out = np.hstack([dV, dtheta])

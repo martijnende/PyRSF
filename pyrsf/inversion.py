@@ -14,7 +14,6 @@
 from __future__ import print_function
 
 from collections import defaultdict
-from itertools import chain
 
 import emcee
 import matplotlib.pyplot as plt
@@ -186,10 +185,16 @@ class rsf_inversion(integrator_class, rsf_framework):
     # vector of to-be inverted parameters
     def unpack_params(self, p):
 
-        params = defaultdict(list)
+        params = dict((key, 0.0) for key in self.inversion_params)
+        states = ("b", "Dc")
+        params["b"] = []
+        params["Dc"] = []
 
         for key, val in zip(self.inversion_names, p):
-            params[key].append(val)
+            if key in states:
+                params[key].append(val)
+            else:
+                params[key] = val
 
         self.params.update(params)
         self.params["b"] = np.array(self.params["b"])
@@ -292,11 +297,11 @@ class rsf_inversion(integrator_class, rsf_framework):
         self.print_result(popt, uncertainty)
 
         # Prepare output dictionary
-        out = {}
-        for i, key in enumerate(inversion_params):
+        out = defaultdict(list)
+        for i, key in enumerate(self.inversion_names):
             # Each parameter result is stored as a pair of
             # (value, uncertainty) in output dict
-            out[key] = (popt[i], uncertainty[i])
+            out[key].append((popt[i], uncertainty[i]))
 
         # Check if a plot is requested
         if plot is True:

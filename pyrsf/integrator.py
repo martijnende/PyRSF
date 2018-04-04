@@ -21,6 +21,10 @@ class integrator_class(rsf_framework):
         self.integrator = ode(self.constitutive_relation)
         self.integrator.set_integrator("vode")
 
+    def set_initial_values(self, p0):
+        self.initial_values = p0
+        pass
+
     def integrate(self, t):
         """
         Main ODE solver
@@ -30,14 +34,11 @@ class integrator_class(rsf_framework):
         self.params["inv_Dc"] = 1.0 / self.params["Dc"]
         self.params["inv_V0"] = 1.0 / self.params["V0"]
 
-        # Initial values of theta
-        theta0 = self.params["Dc"] * self.params["inv_V0"]
-
         # Initial values used for integration [mu0, theta0]
-        y0 = np.hstack([self.params["V0"], theta0])
+        y0 = self.initial_values
 
         # Allocate results
-        result = np.zeros((len(t), 1+len(theta0)))*np.nan
+        result = np.zeros((len(t), 1+len(self.params["Dc"])))*np.nan
         result[0] = y0
 
         integrator = self.integrator
