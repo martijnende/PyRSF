@@ -58,16 +58,14 @@ class rsf_framework:
         Returns: (vector of) the coefficient of friction
         """
         params = self.params
-        b = params["b"].reshape(-1, 1)
-        inv_Dc = params["inv_Dc"].reshape(-1, 1)
 
         direct_effect = params["a"]*np.log(V*params["inv_V0"])
         if self.use_cutoff:
-            evolution_effect = b*np.log(theta*params["Vc"]*inv_Dc + 1.0)
+            evolution_effect = params["b"]*np.log(theta*params["Vc"]*params["inv_Dc"] + 1.0)
         else:
-            evolution_effect = b*np.log(theta*params["V0"]*inv_Dc)
+            evolution_effect = params["b"]*np.log(theta*params["V0"]*params["inv_Dc"])
 
-        return params["mu0"] + direct_effect + evolution_effect.sum(axis=0)
+        return params["mu0"] + direct_effect + evolution_effect
 
     def _dmu_dV(self, V):
         """
@@ -86,6 +84,7 @@ class rsf_framework:
         Returns: partial derivative dmu/dtheta
         """
         params = self.params
+
         if self.use_cutoff:
             return params["b"]*params["Vc"] / (theta*params["Vc"] + params["Dc"])
         else:
@@ -107,10 +106,7 @@ class rsf_framework:
         Input: time, Y
         Returns: Y_dot
         """
-        V = vars[0]
-        theta = vars[1:]
-
-        inv_Dc = self.params["inv_Dc"]
+        V, theta = vars
 
         dtheta = self._state_evolution(theta, V)
         dmu = self._dmu_dt(V)
@@ -125,8 +121,8 @@ class rsf_framework:
         # with G: shear modulus, c: shear wave speed, sigma: normal stress
         # Higher values of eta result in lower slip velocities (more damping)
         # Default value = 0 (no radiation damping)
-        dV = (dmu - (dmu_dtheta*dtheta).sum()) / (dmu_dV + self.params["eta"])
+        dV = (dmu - dmu_dtheta*dtheta) / (dmu_dV + self.params["eta"])
 
         # Pack output
-        out = np.hstack([dV, dtheta])
+        out = [dV, dtheta]
         return out

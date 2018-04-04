@@ -1,14 +1,16 @@
 from __future__ import print_function
 
+import gzip
+import pickle
 import sys
 
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.integrate import odeint
 
-from pyrsf.friction_rsf import rsf_framework
+from pyrsf.inversion import rsf_inversion
 
-rsf = rsf_framework()
+rsf = rsf_inversion()
 
 class test_rsf:
     """Test suite for testing the implementation of rate-and-state friction"""
@@ -21,7 +23,7 @@ class test_rsf:
 
     def print_name(self, name):
         """Print out the class and method names during testing"""
-        print("%s.%s... " % (self.__class__.__name__, name), end="")
+        print("__%s__.%s... " % (self.__class__.__name__, name), end="")
 
     @staticmethod
     def prepare_state_evolution():
@@ -62,3 +64,43 @@ class test_rsf:
 
         assert_allclose(theta, theta_ana, self.rtol)
         print("OK")
+
+    def test_forward(self):
+        """Test for forward RSF modelling with ageing law"""
+
+        self.print_name(sys._getframe().f_code.co_name)
+
+        rtol = 1e-12
+
+        params = {
+            "a": 0.001,
+            "b": 0.0015,
+            "Dc": 1e-4,
+            "k": 50.0,
+            "mu0": 0.6,
+            "V0": 1e-6,
+            "V1": 1e-5,
+            "eta": 0,
+        }
+
+        t = np.linspace(0, 100, int(1e3))
+
+        rsf.set_params(params)
+        rsf.integrator.set_integrator("vode")
+        rsf.set_state_evolution("ageing")
+        rsf.set_initial_values([params["V0"], params["Dc"] / params["V0"]])
+
+        result = rsf.forward(t)
+
+        with gzip.GzipFile("forward_data.tar.gz", "r") as f:
+            truth = pickle.load(f)
+
+
+
+        assert_allclose(result["mu"], truth["mu"], rtol)
+        assert_allclose(result["V"], truth["V"], rtol)
+        assert_allclose(result["theta"], truth["theta"], rtol)
+
+        print("OK")
+
+

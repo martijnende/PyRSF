@@ -29,9 +29,6 @@ class rsf_inversion(integrator_class, rsf_framework):
     Main API for the RSF inversion tool
     """
 
-    # Pattern to match: (b or Dc) + underscore (optional) + numbers
-    regex_pattern = "^((b|Dc)+(_+)?)(?=.*[0-9]).+$"
-
     def __init__(self):
         rsf_framework.__init__(self)
         integrator_class.__init__(self)
@@ -57,14 +54,6 @@ class rsf_inversion(integrator_class, rsf_framework):
             if key not in self.params:
                 print("Parameter '%s' missing" % key)
                 error = True
-
-        if type(self.params["b"]) is not type(np.array([])):
-            print("Parameter 'b' should be a NumPy array (e.g. np.array([0.01, 0.02]) )")
-            error = True
-
-        if type(self.params["Dc"]) is not type(np.array([])):
-            print("Parameter 'Dc' should be a NumPy array (e.g. np.array([0.01, 0.02]) )")
-            error = True
 
         # If we caught an error, exit program
         if error:
@@ -178,27 +167,15 @@ class rsf_inversion(integrator_class, rsf_framework):
     # Auxiliary function to prepare the vector containing the
     # to-be inverted parameters from the params dict
     def pack_params(self):
-        x = list(self.flatten([self.params[key] for key in self.inversion_params]))
+        x = [self.params[key] for key in self.inversion_params]
         return x
 
     # Auxiliary function to prepare the params dict from the
     # vector of to-be inverted parameters
     def unpack_params(self, p):
 
-        params = dict((key, 0.0) for key in self.inversion_params)
-        states = ("b", "Dc")
-        params["b"] = []
-        params["Dc"] = []
-
-        for key, val in zip(self.inversion_names, p):
-            if key in states:
-                params[key].append(val)
-            else:
-                params[key] = val
-
+        params = dict((key, val) for key, val in zip(self.inversion_params, p))
         self.params.update(params)
-        self.params["b"] = np.array(self.params["b"])
-        self.params["Dc"] = np.array(self.params["Dc"])
 
         return params
 
@@ -272,15 +249,6 @@ class rsf_inversion(integrator_class, rsf_framework):
         self.inversion_params = inversion_params
         self.data = data_dict
 
-        names = ()
-        for key in self.inversion_params:
-            if key == "b" or key == "Dc":
-                for i in range(len(self.params[key])):
-                    names += key,
-            else:
-                names += key,
-        self.inversion_names = names
-
         if bayes is True:
             # Perform Bayesian inference
             popt, uncertainty = self.inv_bayes()
@@ -297,11 +265,11 @@ class rsf_inversion(integrator_class, rsf_framework):
         self.print_result(popt, uncertainty)
 
         # Prepare output dictionary
-        out = defaultdict(list)
-        for i, key in enumerate(self.inversion_names):
+        out = {}
+        for i, key in enumerate(self.inversion_params):
             # Each parameter result is stored as a pair of
             # (value, uncertainty) in output dict
-            out[key].append((popt[i], uncertainty[i]))
+            out[key] = (popt[i], uncertainty[i])
 
         # Check if a plot is requested
         if plot is True:

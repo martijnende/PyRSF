@@ -38,7 +38,7 @@ class integrator_class(rsf_framework):
         y0 = self.initial_values
 
         # Allocate results
-        result = np.zeros((len(t), 1+len(self.params["Dc"])))*np.nan
+        result = np.zeros((len(t), 2))*np.nan
         result[0] = y0
 
         integrator = self.integrator
@@ -57,7 +57,7 @@ class integrator_class(rsf_framework):
         # Transpose result first
         result = result.T
         V = result[0]
-        theta = result[1:]
+        theta = result[1]
         mu = self.calc_mu(V, theta)
         output = {
             "mu": mu,

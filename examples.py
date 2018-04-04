@@ -25,8 +25,8 @@ def simple_forward_model():
     # Dictionary of input parameters
     params = {
         "a": 0.001,
-        "b": np.array([0.0015]),
-        "Dc": np.array([1e-4]),
+        "b": 0.0015,
+        "Dc": 1e-4,
         "k": 50.0,
         "mu0": 0.6,
         "V0": 1e-6,
@@ -73,8 +73,8 @@ def forward_SHS():
     # Dictionary of input parameters
     params = {
         "a": 0.001,
-        "b": np.array([0.0015]),
-        "Dc": np.array([1e-4]),
+        "b": 0.0015,
+        "Dc": 1e-4,
         "k": 50.0,
         "mu0": 0.6,
         "V0": 1e-6,
@@ -110,7 +110,7 @@ def forward_SHS():
     t = np.linspace(t_prev, 1000+t_prev, int(1e3))
     params["V1"] = 0.0
     rsf.set_params(params)
-    rsf.set_initial_values(np.hstack([result["V"][-1], result["theta"][:,-1]]))
+    rsf.set_initial_values(np.hstack([result["V"][-1], result["theta"][-1]]))
 
     # Perform forward model
     result = rsf.forward(t)
@@ -128,7 +128,7 @@ def forward_SHS():
     t = np.linspace(t_prev, 1000 + t_prev, int(1e4))
     params["V1"] = 1e-6
     rsf.set_params(params)
-    rsf.set_initial_values(np.hstack([result["V"][-1], result["theta"][:, -1]]))
+    rsf.set_initial_values(np.hstack([result["V"][-1], result["theta"][-1]]))
 
     result = rsf.forward(t)
 
@@ -144,52 +144,6 @@ def forward_SHS():
     plt.subplot(211)
     plt.ylabel("friction [-]")
     plt.subplot(212)
-    plt.yscale("log")
-    plt.xlabel("time [s]")
-    plt.ylabel("velocity [m/s]")
-    plt.tight_layout()
-    plt.show()
-
-def multiple_state_parameters():
-
-    # Dictionary of input parameters
-    params = {
-        "a": 0.001,
-        "b": np.array([0.001, 0.001]),
-        "Dc": np.array([5e-5, 2e-4]),
-        "k": 50.0,
-        "mu0": 0.6,
-        "V0": 1e-6,
-        "V1": 1e-5,
-        "eta": 0,
-    }
-
-    t = np.linspace(0, 100, int(1e4))
-
-    # Set model parameters
-    rsf.set_params(params)
-
-    # Select ageing law
-    rsf.set_state_evolution("ageing")
-
-    # Set initial values (V0, theta0), taken at steady-state
-    rsf.set_initial_values(np.hstack([params["V0"], params["Dc"] / params["V0"]]))
-
-    # Perform forward model
-    result = rsf.forward(t)
-
-    # Time-series of friction and velocity
-    mu = result["mu"]
-    V = result["V"]
-
-    # Plot results
-    plt.figure()
-    plt.subplot(211)
-    plt.plot(t, mu)
-    plt.ylabel("friction [-]")
-    plt.subplot(212)
-    plt.axhline(params["V1"], ls="--", c="k")
-    plt.plot(t, V)
     plt.yscale("log")
     plt.xlabel("time [s]")
     plt.ylabel("velocity [m/s]")
@@ -202,8 +156,8 @@ def simple_inversion():
     # Dictionary of input parameters
     params = {
         "a": 0.001,
-        "b": np.array([0.0015]),
-        "Dc": np.array([1e-4]),
+        "b": 0.0015,
+        "Dc": 1e-4,
         "k": 50.0,
         "mu0": 0.6,
         "V0": 3e-6,
@@ -220,7 +174,8 @@ def simple_inversion():
     rsf.set_state_evolution("ageing")
 
     # Set initial values (V0, theta0), taken at steady-state
-    rsf.set_initial_values(np.hstack([params["V0"], params["Dc"] / params["V0"]]))
+    y0 = [params["V0"], params["Dc"] / params["V0"]]
+    rsf.set_initial_values(y0)
 
     # Perform forward model
     result = rsf.forward(t)
@@ -234,17 +189,18 @@ def simple_inversion():
     # scheme sweat a little bit
 
     params["a"] = 0.0008
-    params["b"] = np.array([0.0011, 0.001])
-    params["Dc"] = np.array([0.9e-4, 1e-2])
-    params["k"] = 40.0
+    params["b"] = 0.0011
+    params["Dc"] = 0.9e-4
+    # params["k"] = 40.0
+    y0 = [params["V0"], params["Dc"] / params["V0"]]
     rsf.set_params(params)
-    rsf.set_initial_values(np.hstack([params["V0"], params["Dc"] / params["V0"]]))
+    rsf.set_initial_values(y0)
 
     # Construct our data dictionary
     data_dict = {"mu": mu_noisy, "t": t}
 
     # The parameters to invert for
-    inversion_params = ("a", "b", "Dc", "k")
+    inversion_params = ("a", "b", "Dc")
 
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
@@ -263,8 +219,8 @@ def regular_stickslips():
     # Dictionary of input parameters
     params = {
         "a": 0.001,
-        "b": np.array([0.0015]),
-        "Dc": np.array([3e-5]),
+        "b": 0.0015,
+        "Dc": 3e-5,
         "k": 10.0,
         "mu0": 0.6,
         "V0": 1e-6,
@@ -272,7 +228,7 @@ def regular_stickslips():
         "eta": eta,
     }
 
-    kc = (params["b"][0]-params["a"])/params["Dc"][0]
+    kc = (params["b"]-params["a"])/params["Dc"]
 
     print("k/kc = %.3f" % (params["k"]/kc))
 
@@ -312,7 +268,6 @@ def regular_stickslips():
 if __name__ == "__main__":
     # simple_forward_model()
     # forward_SHS()
-    # multiple_state_parameters()
     # simple_inversion()
     # regular_stickslips()
 
