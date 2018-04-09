@@ -1,10 +1,11 @@
 # Importing python compatibility functions
 from __future__ import print_function
 
-from scipy.integrate import ode
 import numpy as np
+from scipy.integrate import ode
 
 from pyrsf.friction_rsf import rsf_framework
+
 
 class integrator_class(rsf_framework):
     """
@@ -19,10 +20,11 @@ class integrator_class(rsf_framework):
     def setup(self):
         """Initialises integrator to vode"""
         self.integrator = ode(self.constitutive_relation)
+        # self.integrator = ode(rsf_opt.constitutive_relation)
         self.integrator.set_integrator("vode")
 
     def set_initial_values(self, p0):
-        self.initial_values = p0
+        self.initial_values = np.array(p0)
         pass
 
     def integrate(self, t):
@@ -33,6 +35,7 @@ class integrator_class(rsf_framework):
 
         self.params["inv_Dc"] = 1.0 / self.params["Dc"]
         self.params["inv_V0"] = 1.0 / self.params["V0"]
+        params = self.params
 
         # Initial values used for integration [mu0, theta0]
         y0 = self.initial_values
@@ -44,6 +47,10 @@ class integrator_class(rsf_framework):
         integrator = self.integrator
         # Set initial value
         integrator.set_initial_value(y0, t[0])
+        # integrator.set_f_params(np.array([
+        #     params["a"], params["b"], params["inv_Dc"], params["mu0"],params["V0"],
+        #      params["inv_V0"], params["V1"], params["k"], params["eta"]
+        # ], dtype=float))
 
         i = 1
         # While integrator is alive, keep integrating up to t_max

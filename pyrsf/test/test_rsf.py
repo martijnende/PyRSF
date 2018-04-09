@@ -3,6 +3,7 @@ from __future__ import print_function
 import gzip
 import pickle
 import sys
+import unittest
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -12,7 +13,8 @@ from pyrsf.inversion import rsf_inversion
 
 rsf = rsf_inversion()
 
-class test_rsf:
+
+class test_rsf(unittest.TestCase):
     """Test suite for testing the implementation of rate-and-state friction"""
 
     rtol = 1e-6     # Desired relative tolerance for assertion
@@ -95,11 +97,39 @@ class test_rsf:
         with gzip.GzipFile("forward_data.tar.gz", "r") as f:
             truth = pickle.load(f)
 
+        assert_allclose(result["mu"], truth["mu"], rtol)
 
+        print("OK")
+
+    def test_forward_opt(self):
+        """Test for optimised forward RSF modelling"""
+
+        self.print_name(sys._getframe().f_code.co_name)
+
+        rtol = 1e-5
+
+        params = {
+            "a": 0.001,
+            "b": 0.0015,
+            "Dc": 1e-4,
+            "k": 50.0,
+            "mu0": 0.6,
+            "V0": 1e-6,
+            "V1": 1e-5,
+            "eta": 0,
+        }
+
+        t = np.linspace(0, 100, int(1e3))
+
+        rsf.set_params(params)
+        rsf.set_initial_values([params["V0"], params["Dc"] / params["V0"]])
+
+        result = rsf.forward_opt(t)
+
+        with gzip.GzipFile("forward_data.tar.gz", "r") as f:
+            truth = pickle.load(f)
 
         assert_allclose(result["mu"], truth["mu"], rtol)
-        assert_allclose(result["V"], truth["V"], rtol)
-        assert_allclose(result["theta"], truth["theta"], rtol)
 
         print("OK")
 

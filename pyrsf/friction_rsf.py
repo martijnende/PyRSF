@@ -18,7 +18,11 @@ class rsf_framework:
     J. Geophys. Res., 98(B6), 9885-9907, doi:10.1029/93JB00191
     """
 
-    law_book = ("ageing", "slip")   # Available state evolution laws
+    # Available state evolution laws
+    law_book = {
+        "ageing": ("aging", "ageing", "dieterich", "slowness"),
+        "slip": ("ruina", "slip"),
+    }
 
     # Initialise class, set default state evolution function and
     # evolution term description

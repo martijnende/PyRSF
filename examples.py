@@ -2,8 +2,11 @@ from __future__ import print_function
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn
 
 from pyrsf.inversion import rsf_inversion
+
+seaborn.set(font_scale=1.2)
 
 # Initialise inversion API
 rsf = rsf_inversion()
@@ -202,11 +205,17 @@ def simple_inversion():
     # The parameters to invert for
     inversion_params = ("a", "b", "Dc")
 
+
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
 
-    inv_result = rsf.inversion(data_dict, inversion_params, plot=False, bayes=False)
-    print(inv_result)
+    inv_result = rsf.inversion(
+        data_dict, inversion_params, plot=False, opt=True,
+        bayes=True, load_pickle="bayes_pickle.tar.gz"
+    )
+    # rsf.plot_mcmc_chain(chain)
+    rsf.corner_plot()
+    # print(inv_result)
 
 def regular_stickslips():
 
@@ -268,13 +277,15 @@ def regular_stickslips():
 if __name__ == "__main__":
     # simple_forward_model()
     # forward_SHS()
-    # simple_inversion()
-    # regular_stickslips()
-
-    import cProfile
-    import pstats
-
-    pr = cProfile.Profile()
-    pr.run("simple_inversion()")
-    ps = pstats.Stats(pr).sort_stats("tottime")
-    ps.print_stats()
+    simple_inversion()
+    # exit()
+    # # regular_stickslips()
+    #
+    # import cProfile
+    # import pstats
+    #
+    # pr = cProfile.Profile()
+    # pr.run("simple_inversion()")
+    # # pr.run("simple_forward_model()")
+    # ps = pstats.Stats(pr).sort_stats("cumtime")
+    # ps.print_stats()
