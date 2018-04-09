@@ -1,7 +1,6 @@
 
 import gzip
 import os
-import pickle
 import sys
 from time import time
 
@@ -11,6 +10,7 @@ import matplotlib.ticker as mtick
 import numpy as np
 from matplotlib import gridspec
 from scipy.stats import pearsonr
+from six.moves import cPickle as pickle
 
 
 class bayes_framework:
@@ -116,16 +116,33 @@ class bayes_framework:
         dN = int(nsteps//10)
         ETA_str = "--"
 
-        for i, result in enumerate(sampler.sample(starting_guess, iterations=nsteps)):
-            if i > 0 and i % dN == 0:
-                t_i = time()
-                inv_rate = (t_i-t0)/float(i)
-                todo = nsteps-i
-                ETA = todo*inv_rate
-                ETA_str = "%.2f s" % ETA
+        try:
+            for i, result in enumerate(sampler.sample(starting_guess, iterations=nsteps)):
+                if i > 0 and i % dN == 0:
+                    t_i = time()
+                    inv_rate = (t_i-t0)/float(i)
+                    todo = nsteps-i
+                    ETA = todo*inv_rate
+                    ETA_str = "%.2f s" % ETA
 
-            n = int((self.msg_width + 1) * float(i) / nsteps)
-            sys.stdout.write("\r[{0}{1}]\tETA: {2}".format('#' * n, ' ' * (self.msg_width - n), ETA_str))
+                n = int((self.msg_width + 1) * float(i) / nsteps)
+                sys.stdout.write("\r[{0}{1}]\tETA: {2}".format('#' * n, ' ' * (self.msg_width - n), ETA_str))
+        except pickle.PickleError:
+            print("Python2.7 compatibility issue detected, switching from multithreaded to singlethreaded")
+            sampler = emcee.EnsembleSampler(
+                nwalkers, ndim, self.log_posterior,
+                args=[data["t"], data["mu"]], threads=1
+            )
+            for i, result in enumerate(sampler.sample(starting_guess, iterations=nsteps)):
+                if i > 0 and i % dN == 0:
+                    t_i = time()
+                    inv_rate = (t_i-t0)/float(i)
+                    todo = nsteps-i
+                    ETA = todo*inv_rate
+                    ETA_str = "%.2f s" % ETA
+
+                n = int((self.msg_width + 1) * float(i) / nsteps)
+                sys.stdout.write("\r[{0}{1}]\tETA: {2}".format('#' * n, ' ' * (self.msg_width - n), ETA_str))
 
         sys.stdout.write("\n")
 
@@ -134,7 +151,6 @@ class bayes_framework:
 
         self.chain = sampler.chain
         self.pickle_chain(pickle_file)
-        self.plot_mcmc_chain()
         stats = self.get_mcmc_stats().T
 
         return stats
@@ -164,8 +180,13 @@ class bayes_framework:
         if not os.path.isfile(pickle_file):
             print("Pickles not found!")
             return False
-        with gzip.GzipFile(pickle_file, "r") as f:
-            data = pickle.load(f)
+        try:
+            with gzip.GzipFile(pickle_file, "r") as f:
+                data = pickle.load(f)
+        except ValueError as e:
+            print("Exception '%s' caught, this is likely related to Python version incompatibility" % e)
+            print("Re-run the Bayesian inference using the desired Python version. Will now exit...")
+            exit()
 
         self.__dict__.update(data)
         return True

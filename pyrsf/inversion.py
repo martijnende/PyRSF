@@ -20,6 +20,9 @@ from pyrsf.integrator import integrator_class
 import pyrsf.friction_rsf_opt as rsf_opt
 from pyrsf.bayes import bayes_framework
 
+import warnings
+warnings.simplefilter("once", UserWarning)
+
 
 class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
     """
@@ -115,6 +118,7 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
             params["V0"], params["inv_V0"], params["V1"], params["k"],
             params["eta"]
         ])
+
         opt_result = rsf_opt.integrate(t, params_opt, self.initial_values)
 
         result = {"mu": opt_result[0], "V": opt_result[1], "theta": opt_result[2]}
@@ -189,14 +193,6 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         print("\n(errors reported as single standard deviation) \n")
 
         pass
-
-    # TODO: make this Python2 compatible?
-    def flatten(self, L):
-        for item in L:
-            try:
-                yield from self.flatten(item)
-            except TypeError:
-                yield item
 
     # Auxiliary function to prepare the vector containing the
     # to-be inverted parameters from the params dict

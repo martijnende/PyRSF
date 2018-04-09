@@ -209,13 +209,69 @@ def simple_inversion():
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
 
+    inv_result = rsf.inversion(data_dict, inversion_params, plot=True, opt=True)
+    print(inv_result)
+
+def bayesian_inference():
+
+    # Dictionary of input parameters
+    params = {
+        "a": 0.001,
+        "b": 0.0015,
+        "Dc": 1e-4,
+        "k": 50.0,
+        "mu0": 0.6,
+        "V0": 3e-6,
+        "V1": 1e-5,
+        "eta": 0,
+    }
+
+    t = np.linspace(0, 100, int(1e3))
+
+    # Set model parameters
+    rsf.set_params(params)
+
+    # Select ageing law
+    rsf.set_state_evolution("ageing")
+
+    # Set initial values (V0, theta0), taken at steady-state
+    y0 = [params["V0"], params["Dc"] / params["V0"]]
+    rsf.set_initial_values(y0)
+
+    # Perform forward model
+    result = rsf.forward(t)
+
+    # Generate noisy signal
+    np.random.seed(0)
+    noise = 1e-4*(np.random.rand(len(result["mu"])) - 0.5)
+    mu_noisy = result["mu"] + noise
+
+    # Change initial parameters to make the inversion
+    # scheme sweat a little bit
+
+    params["a"] = 0.0008
+    params["b"] = 0.0011
+    params["Dc"] = 0.9e-4
+    # params["k"] = 40.0
+    y0 = [params["V0"], params["Dc"] / params["V0"]]
+    rsf.set_params(params)
+    rsf.set_initial_values(y0)
+
+    # Construct our data dictionary
+    data_dict = {"mu": mu_noisy, "t": t}
+
+    # The parameters to invert for
+    inversion_params = ("a", "b", "Dc")
+
+    # Perform the inversion. The results are given as a dictionary
+    # in pairs of (value, uncertainty)
+
     inv_result = rsf.inversion(
         data_dict, inversion_params, plot=False, opt=True,
-        bayes=True, load_pickle="bayes_pickle.tar.gz"
+        bayes=True, load_pickle=False
     )
-    # rsf.plot_mcmc_chain(chain)
+    rsf.plot_mcmc_chain()
     rsf.corner_plot()
-    # print(inv_result)
 
 def regular_stickslips():
 
@@ -254,6 +310,7 @@ def regular_stickslips():
 
     # Perform forward model
     result = rsf.forward(t)
+    result["t"] = t
 
     # Time-series of friction and velocity
     mu = result["mu"]
@@ -275,17 +332,8 @@ def regular_stickslips():
 
 
 if __name__ == "__main__":
-    # simple_forward_model()
+    simple_forward_model()
     # forward_SHS()
-    simple_inversion()
-    # exit()
-    # # regular_stickslips()
-    #
-    # import cProfile
-    # import pstats
-    #
-    # pr = cProfile.Profile()
-    # pr.run("simple_inversion()")
-    # # pr.run("simple_forward_model()")
-    # ps = pstats.Stats(pr).sort_stats("cumtime")
-    # ps.print_stats()
+    # simple_inversion()
+    # bayesian_inference()
+    # regular_stickslips()

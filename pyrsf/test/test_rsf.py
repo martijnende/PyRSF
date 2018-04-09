@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import gzip
-import pickle
 import sys
 import unittest
 
@@ -93,11 +91,9 @@ class test_rsf(unittest.TestCase):
         rsf.set_initial_values([params["V0"], params["Dc"] / params["V0"]])
 
         result = rsf.forward(t)
+        truth = np.load("forward_data.npy")
 
-        with gzip.GzipFile("forward_data.tar.gz", "r") as f:
-            truth = pickle.load(f)
-
-        assert_allclose(result["mu"], truth["mu"], rtol)
+        assert_allclose(result["mu"], truth[1], rtol)
 
         print("OK")
 
@@ -125,12 +121,47 @@ class test_rsf(unittest.TestCase):
         rsf.set_initial_values([params["V0"], params["Dc"] / params["V0"]])
 
         result = rsf.forward_opt(t)
+        truth = np.load("forward_data.npy")
 
-        with gzip.GzipFile("forward_data.tar.gz", "r") as f:
-            truth = pickle.load(f)
-
-        assert_allclose(result["mu"], truth["mu"], rtol)
+        assert_allclose(result["mu"], truth[1], rtol)
 
         print("OK")
 
+    def test_stickslip(self):
+        """Test for radiation damped stick-slips"""
 
+        self.print_name(sys._getframe().f_code.co_name)
+
+        rtol = 1e-12
+
+        # Define parameters for radiation damping. See e.g. Thomas et al. (2014)
+        G = 30e9
+        Vs = 3e3
+        sigma = 1e7
+        eta = 0.5 * G / (Vs * sigma)
+
+        # Dictionary of input parameters
+        params = {
+            "a": 0.001,
+            "b": 0.0015,
+            "Dc": 3e-5,
+            "k": 10.0,
+            "mu0": 0.6,
+            "V0": 1e-6,
+            "V1": 1e-5,
+            "eta": eta,
+        }
+
+        t = np.linspace(0, 500, int(1e4))
+
+        rsf.set_params(params)
+        rsf.integrator.set_integrator("vode")
+        rsf.set_state_evolution("ageing")
+        rsf.set_initial_values([params["V0"], params["Dc"] / params["V0"]])
+
+        result = rsf.forward(t)
+        truth = np.load("stickslip_data.npy")
+
+        assert_allclose(result["mu"], truth[1], rtol)
+
+        print("OK")
