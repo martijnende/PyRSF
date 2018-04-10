@@ -99,9 +99,7 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         Input: time vector
         Returns: dictionary of friction, velocity, and state parameter
         """
-
         result = self.integrate(t, mode)
-
         return result
 
     def forward_opt(self, t):
@@ -125,6 +123,10 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
 
         return result
 
+    @staticmethod
+    def interpolate(tx, t, y):
+        y_interp = np.interp(tx, t, y)
+        return y_interp
 
     # Error function to minimise during the inversion
     def error(self, p):
@@ -141,8 +143,11 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
 
     def error_curvefit(self, t, *p):
         self.unpack_params(p)
-        result = self.forward(t)
-        return result["mu"]
+        result = self.forward(t, mode=self.solver_mode)
+        mu = result["mu"]
+        if self.solver_mode is "step":
+            mu = self.interpolate(t, result["t"], result["mu"])
+        return mu
 
     def error_curvefit_opt(self, t, *p):
         self.unpack_params(p)
@@ -248,7 +253,18 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         return popt, pcov
 
     # Main inversion function
-    def inversion(self, data_dict, inversion_params, opt=False, plot=True, bayes=False, load_pickle=False):
+    def inversion(self, data_dict, inversion_params, opt=False, plot=True, bayes=False, load_pickle=False, mode="dense"):
+
+        solver_modes = ("dense", "step")
+        if mode not in solver_modes:
+            print("Illegal solver mode '%s'. Available options: %r" % (mode, solver_modes))
+            exit()
+
+        if mode is "step" and opt is True:
+            print("Optimised solver is requested, but is incompatible with solver mode '%s'" % mode)
+            exit()
+
+        self.solver_mode = mode
 
         # Make sure the set of inversion parameters is a tuple
         inversion_params = tuple(inversion_params)

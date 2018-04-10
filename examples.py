@@ -212,7 +212,7 @@ def simple_inversion():
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
 
-    inv_result = rsf.inversion(data_dict, inversion_params, plot=True, opt=True)
+    inv_result = rsf.inversion(data_dict, inversion_params, plot=True, opt=False, mode="step")
     print(inv_result)
 
 
@@ -341,6 +341,6 @@ def regular_stickslips():
 if __name__ == "__main__":
     # simple_forward_model()
     # forward_SHS()
-    # simple_inversion()
+    simple_inversion()
     # bayesian_inference()
-    regular_stickslips()
+    # regular_stickslips()

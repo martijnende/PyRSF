@@ -43,7 +43,7 @@ class integrator_class(rsf_framework):
         Solout is called after each successful time step, stores the result,
         and resizes the result vector if necessary
         """
-        i = self.i
+        i = self.integrator_step
 
         # Unpack results from ODE solver
         V, theta = y
@@ -56,7 +56,7 @@ class integrator_class(rsf_framework):
         self.result[i, 0] = t
         self.result[i, 1] = V
         self.result[i, 2] = theta
-        self.i += 1		# Increment number of time steps
+        self.integrator_step += 1		# Increment number of time steps
         pass
 
     def integrate(self, t, mode="dense"):
@@ -81,14 +81,16 @@ class integrator_class(rsf_framework):
         integrator = self.integrator
         integrator.set_initial_value(y0, t[0])
 
-        self.i = 1
+        self.integrator_step = 1
 
         if mode == "dense":
+            integrator.set_integrator("vode")
             # While integrator is alive, keep integrating up to t_max
             while integrator.successful() and integrator.t < t_max:
                 # Perform one integration step
-                result = integrator.integrate(t[self.i])
-                self.solout(t[self.i], result)
+                result = integrator.integrate(t[self.integrator_step])
+                # Call solout to store results
+                self.solout(t[self.integrator_step], result)
         elif mode == "step":
             # Switch to Dormand-Price (Runge-Kutta) method
             integrator.set_integrator("dopri5", nsteps=1e6, rtol=1e-6)
