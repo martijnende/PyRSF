@@ -101,7 +101,8 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         Input: time vector
         Returns: dictionary of friction, velocity, and state parameter
         """
-        result = self.integrate(t, mode)
+        self.solver_mode = mode
+        result = self.integrate(t)
         return result
 
     def forward_opt(self, t):
@@ -127,11 +128,12 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
 
     @staticmethod
     def interpolate(tx, t, y):
+        """Interpolate y-data with corresponding t-data to desired tx nodes"""
         y_interp = np.interp(tx, t, y)
         return y_interp
 
-    # Error function to minimise during the inversion
     def error(self, p):
+        """Calculate the misfit between data and model friction"""
 
         # Prepare parameter dict based in input parameters
         params = self.unpack_params(p)
@@ -144,6 +146,7 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         return diff
 
     def error_curvefit(self, t, *p):
+        """Construct forward model along nodes in t, for given parameters *p"""
         self.unpack_params(p)
         result = self.forward(t, mode=self.solver_mode)
         mu = result["mu"]
@@ -152,6 +155,10 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         return mu
 
     def error_curvefit_opt(self, t, *p):
+        """
+        Construct forward model along nodes in t, for given parameters *p
+        Uses optimised (Cython) solver
+        """
         self.unpack_params(p)
         params = self.params
         params_opt = np.array([
@@ -162,33 +169,17 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         result = rsf_opt.integrate(t, params_opt, self.initial_values)
         return result[0]
 
-    # Estimate the uncertainty in the inverted parameters, based
-    # on the Jacobian matrix provided by the leastsq function
-    def estimate_uncertainty(self, popt, pcov):
+    @staticmethod
+    def estimate_uncertainty(pcov):
+        """
+        Estimate the uncertainty in the inverted parameters, based
+        on the covariance matrix provided by the curve_fit function
+        See https://bit.ly/2GRnjGJ for discussion
+        """
+        return np.sqrt(np.diag(pcov))
 
-        N_data = len(self.data["mu"])
-        N_params = len(popt)
-
-        # Check if the problem is well-posed
-        if N_data > N_params and pcov is not None:
-            # Calculate chi-squared
-            s_sq = (self.error(popt)**2).sum() / (N_data - N_params)
-            pcov = pcov*s_sq
-        else:
-            pcov = np.inf
-
-        # Compute uncertainty in each inverted parameter
-        buf = []
-        for i in range(N_params):
-            try:
-                buf.append(np.abs(pcov[i,i])**0.5)
-            except:
-                buf.append(0.0)
-
-        return np.array(buf)
-
-    # Print the results of the inversion on-screen (TODO)
     def print_result(self, popt, err):
+        """Print the results of the inversion on-screen (TODO)"""
 
         return None
 
@@ -201,40 +192,32 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
 
         pass
 
-    # Auxiliary function to prepare the vector containing the
-    # to-be inverted parameters from the params dict
     def pack_params(self):
+        """
+        Auxiliary function to prepare the vector containing the
+        to-be inverted parameters from the params dict
+        """
         x = [self.params[key] for key in self.inversion_params]
         return x
 
-    # Auxiliary function to prepare the params dict from the
-    # vector of to-be inverted parameters
     def unpack_params(self, p):
-
+        """
+        Auxiliary function to prepare the params dict from the
+        vector of to-be inverted parameters
+        """
         params = dict((key, val) for key, val in zip(self.inversion_params, p))
         params["inv_Dc"] = 1.0/params["Dc"]
         self.params.update(params)
 
         return params
 
-    # Perform least-squares regression
-    def inv_leastsq(self):
-
-        # Prepare a vector with our initial guess
-        x0 = self.pack_params()
-
-        # OLS function
-        popt, pcov, infodict, errmsg, success = leastsq(self.error, x0, full_output=True)
-
-        # Return best-fit parameters and Jacobian matrix
-        return popt, pcov
-
-    # Perform non-linear least-squares
     def inv_curvefit(self, opt=False):
+        """Perform non-linear least-squares"""
 
         # Prepare a vector with our initial guess
         x0 = self.pack_params()
 
+        # Error checking
         if opt is True:
             print("Performing inversion in optimised mode")
             if self.params["state_evolution"] is not "ageing":
@@ -254,17 +237,20 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         # Return best-fit parameters and covariance matrix
         return popt, pcov
 
-    # Main inversion function
     def inversion(self, data_dict, inversion_params, opt=False, plot=True, bayes=False, load_pickle=False, mode="dense"):
+        """Main inversion API function"""
 
+        # Check if supplied solver mode is valid
         if mode not in self.solver_modes:
             print("Illegal solver mode '%s'. Available options: %r" % (mode, self.solver_modes))
             exit()
 
+        # Check for solver mode conflict with optimised solver
         if mode is "step" and opt is True:
             print("Optimised solver is requested, but is incompatible with solver mode '%s'" % mode)
             exit()
 
+        # Set solver mode
         self.solver_mode = mode
 
         # Make sure the set of inversion parameters is a tuple
@@ -287,13 +273,11 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
                 popt0 = np.hstack([popt0, self.params["sigma"]])
                 popt, uncertainty = self.inv_bayes(popt0)
         else:
-            # Get best-fit parameters and Jacobian
-            # popt, pcov = self.inv_leastsq()
-            # Note, pcov not correct!!!! See documentation Scipy
+            # Get best-fit parameters and covariance matrix
             popt, pcov = self.inv_curvefit(opt)
 
-            # Calculate error of estimate
-            uncertainty = self.estimate_uncertainty(popt, pcov)
+            # Calculate one standard error of estimate
+            uncertainty = self.estimate_uncertainty(pcov)
 
         # Print results to screen
         self.print_result(popt, uncertainty)

@@ -85,10 +85,9 @@ class bayes_framework:
         """
         Perform the Bayesian inference (inversion), given the data. The initial
         guess is obtained from
-        Input: initial guess
-        Returns: the sampled posterior distribution (MCMC chain)
+        Input: initial guess, pickle output file
+        Returns: summary statistocs of the sampled posterior distribution
         """
-        # np.random.seed(0)
 
         self.unpack_params(p0)
         params = self.params
@@ -200,7 +199,6 @@ class bayes_framework:
         """
         Calculate the mean and standard deviation of MCMC chain for each model
         parameter in the posterior distribution (after a certain burn-in)
-        Input: the MCMC chain
         Returns: posterior distribution statistics
         """
 

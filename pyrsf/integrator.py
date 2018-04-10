@@ -13,6 +13,7 @@ class integrator_class(rsf_framework):
     """
 
     resize_step = int(1e3)
+    mode = "dense"
 
     def __init__(self):
         rsf_framework.__init__(self)
@@ -20,7 +21,7 @@ class integrator_class(rsf_framework):
         pass
 
     def setup(self):
-        """Initialises integrator to vode"""
+        """Initialises integrator to VODE (default)"""
         self.integrator = ode(self.constitutive_relation)
         # self.integrator = ode(rsf_opt.constitutive_relation)
         self.integrator.set_integrator("vode")
@@ -59,7 +60,7 @@ class integrator_class(rsf_framework):
         self.integrator_step += 1		# Increment number of time steps
         pass
 
-    def integrate(self, t, mode="dense"):
+    def integrate(self, t):
         """
         Main ODE solver
         Input: time vector at which output is desired
@@ -82,6 +83,7 @@ class integrator_class(rsf_framework):
         integrator.set_initial_value(y0, t[0])
 
         self.integrator_step = 1
+        mode = self.solver_mode
 
         if mode == "dense":
             integrator.set_integrator("vode")
