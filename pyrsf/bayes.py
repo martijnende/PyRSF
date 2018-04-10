@@ -48,8 +48,12 @@ class bayes_framework:
         weights = 1.0
         sigma = weights * params["sigma"]
 
-        model_result = self.forward_opt(t)
-        mu_model = model_result["mu"]
+        if self.solver_mode == "step":
+            model_result = self.forward(t, mode=self.solver_mode)
+            mu_model = self.interpolate(t, model_result["t"], model_result["mu"])
+        else:
+            model_result = self.forward_opt(t)
+            mu_model = model_result["mu"]
 
         if np.isnan(mu_model[-1]):
             return -np.inf

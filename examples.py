@@ -208,7 +208,6 @@ def simple_inversion():
     # The parameters to invert for
     inversion_params = ("a", "b", "Dc")
 
-
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
 
@@ -271,9 +270,13 @@ def bayesian_inference():
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
 
+    # inv_result = rsf.inversion(
+    #     data_dict, inversion_params, plot=False, opt=True,
+    #     bayes=True, load_pickle="bayes_pickle.tar.gz"
+    # )
     inv_result = rsf.inversion(
-        data_dict, inversion_params, plot=False, opt=True,
-        bayes=True, load_pickle="bayes_pickle.tar.gz"
+        data_dict, inversion_params, plot=False, opt=False,
+        bayes=True, load_pickle=False, mode="step"
     )
     rsf.plot_mcmc_chain()
     rsf.corner_plot()
@@ -341,6 +344,6 @@ def regular_stickslips():
 if __name__ == "__main__":
     # simple_forward_model()
     # forward_SHS()
-    simple_inversion()
-    # bayesian_inference()
+    # simple_inversion()
+    bayesian_inference()
     # regular_stickslips()

@@ -29,6 +29,8 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
     Main API for the RSF inversion tool
     """
 
+    solver_modes = ("dense", "step")
+
     def __init__(self):
         integrator_class.__init__(self)
         rsf_framework.__init__(self)
@@ -145,7 +147,7 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         self.unpack_params(p)
         result = self.forward(t, mode=self.solver_mode)
         mu = result["mu"]
-        if self.solver_mode is "step":
+        if self.solver_mode == "step":
             mu = self.interpolate(t, result["t"], result["mu"])
         return mu
 
@@ -255,9 +257,8 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
     # Main inversion function
     def inversion(self, data_dict, inversion_params, opt=False, plot=True, bayes=False, load_pickle=False, mode="dense"):
 
-        solver_modes = ("dense", "step")
-        if mode not in solver_modes:
-            print("Illegal solver mode '%s'. Available options: %r" % (mode, solver_modes))
+        if mode not in self.solver_modes:
+            print("Illegal solver mode '%s'. Available options: %r" % (mode, self.solver_modes))
             exit()
 
         if mode is "step" and opt is True:
