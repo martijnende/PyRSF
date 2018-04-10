@@ -93,14 +93,14 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
 
         pass
 
-    def forward(self, t):
+    def forward(self, t, mode="dense"):
         """
         Construct forward RSF model at specified time intervals
         Input: time vector
         Returns: dictionary of friction, velocity, and state parameter
         """
 
-        result = self.integrate(t)
+        result = self.integrate(t, mode)
 
         return result
 

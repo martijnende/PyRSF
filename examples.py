@@ -1,26 +1,27 @@
+"""
+Examples include:
+
+1) Simple forward model of a velocity-step
+2) Forward model of a slide-hold-slide experiment
+3) Inversion on synthetic data
+4) Bayesian inference
+5) Simulating regular stick-slips with radiation damping
+"""
+
 from __future__ import print_function
 
+import matplotlib
+matplotlib.use("qt4agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn
+seaborn.set(font_scale=1.2)
 
 from pyrsf.inversion import rsf_inversion
-
-seaborn.set(font_scale=1.2)
 
 # Initialise inversion API
 rsf = rsf_inversion()
 
-"""
-
-Examples include:
-
-1) Simple forward model of a velocity-step
-2) Forward model with two state variables
-3) Inversion
-4) Simulating regular stick-slips with radiation damping
-
-"""
 
 # A simple velocity-step forward model
 def simple_forward_model():
@@ -49,16 +50,17 @@ def simple_forward_model():
     rsf.set_initial_values(np.hstack([params["V0"], params["Dc"] / params["V0"]]))
 
     # Perform forward model
-    result = rsf.forward(t)
+    result = rsf.forward(t, mode="dense")
 
     # Time-series of friction and velocity
+    t = result["t"]
     mu = result["mu"]
     V = result["V"]
 
     # Plot results
     plt.figure()
     plt.subplot(211)
-    plt.plot(t, mu)
+    plt.plot(t, mu, "-")
     plt.ylabel("friction [-]")
     plt.subplot(212)
     plt.axhline(params["V1"], ls="--", c="k")
@@ -154,6 +156,7 @@ def forward_SHS():
     plt.show()
 
 
+# Perform inversion on synthetic data
 def simple_inversion():
 
     # Dictionary of input parameters
@@ -212,6 +215,8 @@ def simple_inversion():
     inv_result = rsf.inversion(data_dict, inversion_params, plot=True, opt=True)
     print(inv_result)
 
+
+# Perform Bayesian inference
 def bayesian_inference():
 
     # Dictionary of input parameters
@@ -268,11 +273,13 @@ def bayesian_inference():
 
     inv_result = rsf.inversion(
         data_dict, inversion_params, plot=False, opt=True,
-        bayes=True, load_pickle=False
+        bayes=True, load_pickle="bayes_pickle.tar.gz"
     )
     rsf.plot_mcmc_chain()
     rsf.corner_plot()
 
+
+# Forward modelling of stick-slips with stable limit cycles
 def regular_stickslips():
 
     # Define parameters for radiation damping. See e.g. Thomas et al. (2014)
@@ -309,17 +316,17 @@ def regular_stickslips():
     rsf.set_initial_values(np.hstack([params["V0"], params["Dc"] / params["V0"]]))
 
     # Perform forward model
-    result = rsf.forward(t)
-    result["t"] = t
+    result = rsf.forward(t, mode="step")
 
     # Time-series of friction and velocity
+    t = result["t"]
     mu = result["mu"]
     V = result["V"]
 
     # Plot results
     plt.figure()
     plt.subplot(211)
-    plt.plot(t, mu)
+    plt.plot(t, mu, "-")
     plt.ylabel("friction [-]")
     plt.subplot(212)
     plt.axhline(params["V1"], ls="--", c="k")
@@ -332,8 +339,8 @@ def regular_stickslips():
 
 
 if __name__ == "__main__":
-    simple_forward_model()
+    # simple_forward_model()
     # forward_SHS()
     # simple_inversion()
     # bayesian_inference()
-    # regular_stickslips()
+    regular_stickslips()

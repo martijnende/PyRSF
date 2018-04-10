@@ -165,3 +165,5 @@ class test_rsf(unittest.TestCase):
         assert_allclose(result["mu"], truth[1], rtol)
 
         print("OK")
+
+

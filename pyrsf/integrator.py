@@ -12,6 +12,8 @@ class integrator_class(rsf_framework):
     Integrator class that handles the ODE solver. Inherits from rsf_framework
     """
 
+    resize_step = int(1e3)
+
     def __init__(self):
         rsf_framework.__init__(self)
         self.setup()
@@ -27,7 +29,37 @@ class integrator_class(rsf_framework):
         self.initial_values = np.array(p0)
         pass
 
-    def integrate(self, t):
+    def resize(self):
+        """
+        When using an adaptive time-step, we need to expand the size of the
+        output vectors when more steps are taken than initially anticipated
+        """
+        extension = np.zeros((self.resize_step, 3))*np.nan
+        self.result = np.concatenate((self.result, extension), axis=0)
+        pass
+
+    def solout(self, t, y):
+        """
+        Solout is called after each successful time step, stores the result,
+        and resizes the result vector if necessary
+        """
+        i = self.i
+
+        # Unpack results from ODE solver
+        V, theta = y
+
+        # Check if resize is needed for storing results
+        if i >= self.result.shape[0]:
+            self.resize()
+
+        # Store results
+        self.result[i, 0] = t
+        self.result[i, 1] = V
+        self.result[i, 2] = theta
+        self.i += 1		# Increment number of time steps
+        pass
+
+    def integrate(self, t, mode="dense"):
         """
         Main ODE solver
         Input: time vector at which output is desired
@@ -37,36 +69,47 @@ class integrator_class(rsf_framework):
         self.params["inv_V0"] = 1.0 / self.params["V0"]
         params = self.params
 
-        # Initial values used for integration [mu0, theta0]
+        # Initial values used for integration [V0, theta0]
         y0 = self.initial_values
 
         # Allocate results
-        result = np.zeros((len(t), 2))*np.nan
-        result[0] = y0
+        self.result = np.zeros((self.resize_step, 3))*np.nan
+        self.result[0] = np.hstack([0.0, y0])
+
+        t_max = t[-1]
 
         integrator = self.integrator
-        # Set initial value
         integrator.set_initial_value(y0, t[0])
-        # integrator.set_f_params(np.array([
-        #     params["a"], params["b"], params["inv_Dc"], params["mu0"],params["V0"],
-        #      params["inv_V0"], params["V1"], params["k"], params["eta"]
-        # ], dtype=float))
 
-        i = 1
-        # While integrator is alive, keep integrating up to t_max
-        while integrator.successful() and integrator.t < np.max(t):
-            # Perform one integration step
-            integrator.integrate(t[i])
-            # Store result
-            result[i] = integrator.y[:]
-            i += 1
+        self.i = 1
+
+        if mode == "dense":
+            # While integrator is alive, keep integrating up to t_max
+            while integrator.successful() and integrator.t < t_max:
+                # Perform one integration step
+                result = integrator.integrate(t[self.i])
+                self.solout(t[self.i], result)
+        elif mode == "step":
+            # Switch to Dormand-Price (Runge-Kutta) method
+            integrator.set_integrator("dopri5", nsteps=1e6, rtol=1e-6)
+            # Set function to call after each successful step
+            integrator.set_solout(self.solout)
+            # Perform integration up to t_max
+            integrator.integrate(t_max)
+        else:
+            print("Mode '%s' not available" % mode)
+            exit()
 
         # Transpose result first
-        result = result.T
-        V = result[0]
-        theta = result[1]
+        result = self.result.T
+        t, V, theta = result
+        inds = np.isfinite(t)
+        t = t[inds]
+        V = V[inds]
+        theta = theta[inds]
         mu = self.calc_mu(V, theta)
         output = {
+            "t": t,
             "mu": mu,
             "theta": theta,
             "V": V,
