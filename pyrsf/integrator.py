@@ -94,7 +94,7 @@ class integrator_class(rsf_framework):
                 self.solout(t[self.integrator_step], result)
         elif mode == "step":
             # Switch to Dormand-Price (Runge-Kutta) method
-            integrator.set_integrator("dopri5", nsteps=1e6, rtol=1e-6)
+            integrator.set_integrator("dopri5", nsteps=1e6, rtol=1e-6, verbosity=-1)
             # Set function to call after each successful step
             integrator.set_solout(self.solout)
             # Perform integration up to t_max

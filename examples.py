@@ -342,8 +342,8 @@ def regular_stickslips():
 
 
 if __name__ == "__main__":
-    # simple_forward_model()
-    # forward_SHS()
-    # simple_inversion()
-    # bayesian_inference()
+    simple_forward_model()
+    forward_SHS()
+    simple_inversion()
+    bayesian_inference()
     regular_stickslips()
