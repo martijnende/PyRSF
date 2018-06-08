@@ -194,6 +194,30 @@ class bayes_framework:
         self.__dict__.update(data)
         return True
 
+    def prune_chain(self):
+        """
+        Sometimes a few walkers get stuck in a local minimum. Prune those
+        walkers astray from the sampling chain
+        """
+
+        chain = self.chain
+        nburn = self.bayes_params["nburn"]
+
+        stats = np.zeros((len(self.inversion_params), 2))
+
+        for i, key in enumerate(self.inversion_params):
+            param = chain[:, nburn:, i].reshape(-1)
+            std = param.std()
+            mean = param.mean()
+            dx = np.abs(mean - param)
+            param[dx > 2*std] = np.nan
+            stats[i, 0] = np.nanmean(param)
+            stats[i, 1] = np.nanstd(param)
+            plt.plot(np.sort(dx)[::-1], ".")
+            plt.axhline(2*std, ls="--", c="k")
+            plt.show()
+
+        return stats
 
     def get_mcmc_stats(self):
         """
@@ -273,7 +297,7 @@ class bayes_framework:
                     param_j = chain[:, nburn:, j].reshape(-1)
                     r, p = pearsonr(param_i, param_j)
                     plt.plot(param_j, param_i, ".", ms=1, alpha=0.5)
-                    plt.plot(param_j.mean(), param_i.mean(), "o", mew=1, mfc="r", mec="k")
+                    plt.plot(np.median(param_j), np.median(param_i), "o", mew=1, mfc="r", mec="k")
                     plt.text(0.5, 0.9, "pearson r: %.2f" % r, transform=ax.transAxes, fontsize=9, ha="center")
                     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter("%.2e"))
                     ax.xaxis.set_major_formatter(mtick.FormatStrFormatter("%.2e"))

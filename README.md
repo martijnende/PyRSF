@@ -13,7 +13,7 @@ There are various other RSF modelling tools out there, such as Chris Marone's [x
 
 PyRSF depends on various numerical and scientific libraries, including [SciPy](https://scipy.org/), [emcee](http://dfm.io/emcee/), and [Cython](http://cython.org/), as well as the plotting libraries [matplotlib](https://matplotlib.org/) and [seaborn](https://seaborn.pydata.org/).
 
-Note: in order to perform highly optimised (~50x speed-up) forward modelling, enter the `pyrsf` subdirectory and execute `python setup.py build_ext --inplace`. This will create an executable starting with `friction_rsf_opt` in the `/build` folder. Copy this executable to its parent directory, so that it can be accessed by the main API classes. As an alternative, an adaptively time-stepping ODE solver can be employed, at a ~2x performance cost.
+Note: in order to perform highly optimised (~50x speed-up) forward modelling, enter the `pyrsf` subdirectory and execute `python setup.py build_ext --inplace`. This will create an executable starting with `friction_rsf_opt` in the `/build` folder. Copy this executable to its parent directory, so that it can be accessed by the main API classes. As an alternative, an adaptively time-stepping ODE solver can be employed, at a ~2x performance cost for small (< 1000 points) data sets.
 
 ### To-do
 
@@ -22,4 +22,4 @@ Note: in order to perform highly optimised (~50x speed-up) forward modelling, en
 - [X] Adaptive time-stepping
 - [ ] iPython notebooks
 - [ ] Inversion of the RSF framework to stick-slip data
-- [ ] Re-introduction multiple state parameters
+- [ ] Re-introduction of multiple state parameters

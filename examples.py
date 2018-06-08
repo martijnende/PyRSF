@@ -11,7 +11,7 @@ Examples include:
 from __future__ import print_function
 
 import matplotlib
-matplotlib.use("qt4agg")
+matplotlib.use("qt5agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn
@@ -344,6 +344,6 @@ def regular_stickslips():
 if __name__ == "__main__":
     # simple_forward_model()
     # forward_SHS()
-    simple_inversion()
+    # simple_inversion()
     # bayesian_inference()
-    # regular_stickslips()
+    regular_stickslips()
