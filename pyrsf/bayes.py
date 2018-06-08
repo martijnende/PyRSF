@@ -37,7 +37,6 @@ class bayes_framework:
     def log_likelihood(self, t, y):
         """
         Calculate the log likelihood of the data, given the model parameters
-        This employs the optimised forward model for performance
         Input: time, friction data
         Returns: log likelihood
         """
@@ -52,7 +51,7 @@ class bayes_framework:
             model_result = self.forward(t, mode=self.solver_mode)
             mu_model = self.interpolate(t, model_result["t"], model_result["mu"])
         else:
-            model_result = self.forward_opt(t)
+            model_result = self.forward(t)
             mu_model = model_result["mu"]
 
         if np.isnan(mu_model[-1]):

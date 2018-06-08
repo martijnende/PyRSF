@@ -97,36 +97,6 @@ class test_rsf(unittest.TestCase):
 
         print("OK")
 
-    def test_forward_opt(self):
-        """Test for optimised forward RSF modelling"""
-
-        self.print_name(sys._getframe().f_code.co_name)
-
-        rtol = 1e-5
-
-        params = {
-            "a": 0.001,
-            "b": 0.0015,
-            "Dc": 1e-4,
-            "k": 50.0,
-            "mu0": 0.6,
-            "V0": 1e-6,
-            "V1": 1e-5,
-            "eta": 0,
-        }
-
-        t = np.linspace(0, 100, int(1e3))
-
-        rsf.set_params(params)
-        rsf.set_initial_values([params["V0"], params["Dc"] / params["V0"]])
-
-        result = rsf.forward_opt(t)
-        truth = np.load("forward_data.npy")
-
-        assert_allclose(result["mu"], truth[1], rtol)
-
-        print("OK")
-
     def test_stickslip(self):
         """Test for radiation damped stick-slips"""
 

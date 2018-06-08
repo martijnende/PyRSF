@@ -211,7 +211,7 @@ def simple_inversion():
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
 
-    inv_result = rsf.inversion(data_dict, inversion_params, plot=True, opt=False, mode="step")
+    inv_result = rsf.inversion(data_dict, inversion_params, plot=True, mode="step")
     print(inv_result)
 
 
@@ -271,11 +271,11 @@ def bayesian_inference():
     # in pairs of (value, uncertainty)
 
     # inv_result = rsf.inversion(
-    #     data_dict, inversion_params, plot=False, opt=True,
+    #     data_dict, inversion_params, plot=False,
     #     bayes=True, load_pickle="bayes_pickle.tar.gz"
     # )
     inv_result = rsf.inversion(
-        data_dict, inversion_params, plot=False, opt=False,
+        data_dict, inversion_params, plot=False,
         bayes=True, load_pickle=False, mode="step"
     )
     rsf.plot_mcmc_chain()

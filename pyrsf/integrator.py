@@ -23,7 +23,6 @@ class integrator_class(rsf_framework):
     def setup(self):
         """Initialises integrator to VODE (default)"""
         self.integrator = ode(self.constitutive_relation)
-        # self.integrator = ode(rsf_opt.constitutive_relation)
         self.integrator.set_integrator("vode")
 
     def set_initial_values(self, p0):
