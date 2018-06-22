@@ -11,7 +11,7 @@ PyRSF is a rate-and-state friction (RSF) modelling package written in Python (2.
 
 There are various other RSF modelling tools out there, such as Chris Marone's [xlook](https://github.com/PennStateRockandSedimentMechanics/xlook) and John Leeman's [rsfmodel toolkit](https://github.com/jrleeman/rsfmodel). PyRSF is complementary to these.
 
-PyRSF depends on various numerical and scientific libraries, including [SciPy](https://scipy.org/), [emcee](http://dfm.io/emcee/), and [Cython](http://cython.org/), as well as the plotting libraries [matplotlib](https://matplotlib.org/) and [seaborn](https://seaborn.pydata.org/).
+PyRSF depends on various numerical and scientific libraries, including [SciPy](https://scipy.org/) and [emcee](http://dfm.io/emcee/), as well as the plotting libraries [matplotlib](https://matplotlib.org/) and [seaborn](https://seaborn.pydata.org/).
 
 ### To-do
 

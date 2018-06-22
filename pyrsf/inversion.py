@@ -114,7 +114,12 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
         """Calculate the misfit between data and model friction"""
 
         # Prepare parameter dict based in input parameters
-        params = self.unpack_params(p)
+        self.unpack_params(p)
+        y0 = np.array([
+            self.params["V0"],
+            self.params["Dc"] / self.params["V0"]
+        ])
+        self.set_initial_values(y0)
 
         # Run forward model
         result = self.forward(self.data["t"])
@@ -126,6 +131,11 @@ class rsf_inversion(integrator_class, rsf_framework, bayes_framework):
     def error_curvefit(self, t, *p):
         """Construct forward model along nodes in t, for given parameters *p"""
         self.unpack_params(p)
+        y0 = np.array([
+            self.params["V0"],
+            self.params["Dc"] / self.params["V0"]
+        ])
+        self.set_initial_values(y0)
         result = self.forward(t, mode=self.solver_mode)
         mu = result["mu"]
         if self.solver_mode == "step":

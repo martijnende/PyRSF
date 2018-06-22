@@ -206,7 +206,7 @@ def simple_inversion():
     data_dict = {"mu": mu_noisy, "t": t}
 
     # The parameters to invert for
-    inversion_params = ("a", "b", "Dc")
+    inversion_params = ("a", "b", "Dc", "k")
 
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
@@ -265,15 +265,10 @@ def bayesian_inference():
     data_dict = {"mu": mu_noisy, "t": t}
 
     # The parameters to invert for
-    inversion_params = ("a", "b", "Dc")
+    inversion_params = ("a", "b", "Dc", "k")
 
     # Perform the inversion. The results are given as a dictionary
     # in pairs of (value, uncertainty)
-
-    # inv_result = rsf.inversion(
-    #     data_dict, inversion_params, plot=False,
-    #     bayes=True, load_pickle="bayes_pickle.tar.gz"
-    # )
     inv_result = rsf.inversion(
         data_dict, inversion_params, plot=False,
         bayes=True, load_pickle=False, mode="step"

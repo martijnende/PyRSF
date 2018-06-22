@@ -67,7 +67,6 @@ class integrator_class(rsf_framework):
 
         self.params["inv_Dc"] = 1.0 / self.params["Dc"]
         self.params["inv_V0"] = 1.0 / self.params["V0"]
-        params = self.params
 
         # Initial values used for integration [V0, theta0]
         y0 = self.initial_values
